@@ -79,6 +79,10 @@ with aba_lancar:
             sabor = st.text_input("Sabor do Bolo (Digite o sabor e detalhes) *")
             tamanho = st.text_input("Tamanho/Peso (Ex: 2kg, 20 fatias, Grande) *")
         
+        # Novos campos de endereço e observações
+        endereco = st.text_input("Endereço para Entrega (Preencha caso a opção seja 'Casa')")
+        observacoes = st.text_area("Observações (Opcional - Ex: Alergias, detalhes na decoração, mensagem, etc.)")
+        
         submit = st.form_submit_button("Salvar Pedido")
 
         if submit and cliente and sabor and tamanho:
@@ -89,7 +93,9 @@ with aba_lancar:
                 "sabor": sabor,
                 "tamanho": tamanho,
                 "local_retirada": local_retirada,
+                "endereco": endereco,
                 "data_entrega": str(data_entrega),
+                "observacoes": observacoes,
                 "status": "Pendente"
             })
             st.success(f"✅ Encomenda de {cliente} lançada com sucesso!")
@@ -103,17 +109,20 @@ with aba_visualizar:
     for doc in encomendas_ref:
         pedido = doc.to_dict()
         
-        # O '.get()' evita erros em pedidos antigos que não tinham telefone ou local
+        # O '.get()' evita erros em pedidos antigos
         nome_cli = pedido.get('cliente', 'Sem Nome')
         data_ent = pedido.get('data_entrega', '')
         tamanho_bolo = pedido.get('tamanho', pedido.get('peso', 'Não informado'))
+        endereco_entrega = pedido.get('endereco', 'Não informado')
         
         with st.expander(f"📦 Pedido: {nome_cli} - Para: {data_ent} ({pedido.get('status', 'Pendente')})"):
             st.markdown(f"""
             - **Telefone:** {pedido.get('telefone', 'Não informado')}
-            - **Local de Retirada:** <span style='color:#9b1a1a; font-weight:bold;'>{pedido.get('local_retirada', 'Não informado')}</span>
+            - **Local de Retirada/Entrega:** <span style='color:#9b1a1a; font-weight:bold;'>{pedido.get('local_retirada', 'Não informado')}</span>
+            - **Endereço:** {endereco_entrega}
             - **Sabor:** {pedido.get('sabor', 'Não informado')}
             - **Tamanho/Peso:** {tamanho_bolo}
+            - **Observações:** {pedido.get('observacoes', 'Nenhuma observação')}
             - **Status:** {pedido.get('status', 'Pendente')}
             """, unsafe_allow_html=True)
             
@@ -128,14 +137,11 @@ with aba_visualizar:
                     db.collection("encomendas").document(doc.id).delete()
                     st.rerun()
             with col_c:
-                # Código especial para criar um botão de impressão
+                # Botão de impressão
                 components.html(f"""
                     <script>
                         function imprimir() {{
                             window.parent.print();
                         }}
                     </script>
-                    <button onclick="imprimir()" style="background-color: #ddaf25; border: none; color: white; padding: 8px 15px; font-weight: bold; border-radius: 8px; cursor: pointer; width: 100%;">
-                        🖨️ Imprimir Página
-                    </button>
-                """, height=50)
+                    <button onclick="imprimir()" style
