@@ -115,7 +115,7 @@ db = firestore.client()
 # 4. Cabeçalho Sofisticado
 col_logo, col_titulo = st.columns([1, 5])
 with col_logo:
-    try: st.image("logo.jpg", width=130)
+    try: st.image("logo.png", width=130)
     except: st.write("*(Logo)*")
 with col_titulo:
     st.markdown("<h1 style='margin-bottom: 0; padding-bottom: 0;'>Sistema de Encomendas</h1>", unsafe_allow_html=True)
@@ -131,7 +131,7 @@ with aba_lancar:
     with st.form("form_encomenda"):
         st.markdown("<h3 style='color:#9b1a1a;'>👤 Dados do Cliente</h3>", unsafe_allow_html=True)
         c1, c2 = st.columns(2)
-        with c1: cliente = st.text_input("Nome Completo *", placeholder="Ex: Maria Joaquina")
+        with c1: cliente = st.text_input("Nome Completo *", placeholder="Ex: Maria Helena")
         with c2: telefone = st.text_input("WhatsApp / Telefone", placeholder="(00) 00000-0000")
         
         st.markdown("<hr style='margin: 10px 0;'>", unsafe_allow_html=True)
@@ -139,7 +139,7 @@ with aba_lancar:
         st.markdown("<h3 style='color:#9b1a1a;'>🎂 Detalhes do Bolo</h3>", unsafe_allow_html=True)
         c3, c4 = st.columns([2, 1])
         with c3: sabor = st.text_input("Sabor e Recheio *", placeholder="Ex: Massa branca, recheio de ninho com morangos")
-        with c4: tamanho = st.text_input("Tamanho/Peso *", placeholder="Ex: 2kg ou 20 fatias")
+        with c4: tamanho = st.text_input("Tamanho/Peso *", placeholder="Ex: uma tira, meia tira, meia receita ou receita inteira")
         observacoes = st.text_area("Observações Especiais", placeholder="Mensagens para o topo, restrições alimentares, cor da decoração, etc.")
 
         st.markdown("<hr style='margin: 10px 0;'>", unsafe_allow_html=True)
