@@ -74,6 +74,7 @@ with aba_lancar:
             cliente = st.text_input("Nome do Cliente *")
             telefone = st.text_input("Telefone do Cliente")
             data_entrega = st.date_input("Data de Entrega *")
+            horario_retirada = st.time_input("Horário de Retirada/Entrega")
         with col2:
             local_retirada = st.selectbox("Local de Retirada / Entrega", ["Loja cofesa", "Loja centro", "Casa"])
             sabor = st.text_input("Sabor do Bolo (Digite o sabor e detalhes) *")
@@ -95,6 +96,7 @@ with aba_lancar:
                 "local_retirada": local_retirada,
                 "endereco": endereco,
                 "data_entrega": str(data_entrega),
+                "horario_retirada": str(horario_retirada),
                 "observacoes": observacoes,
                 "status": "Pendente"
             })
@@ -103,7 +105,14 @@ with aba_lancar:
             st.warning("Por favor, preencha o Nome, Sabor e Tamanho do bolo.")
 
 with aba_visualizar:
-    st.subheader("Encomendas Registradas (Sincronizado)")
+    col_titulo_vis, col_btn_atualizar = st.columns([3, 1])
+    with col_titulo_vis:
+        st.subheader("Encomendas Registradas (Sincronizado)")
+    with col_btn_atualizar:
+        # Botão dedicado para recarregar a página e puxar novos pedidos
+        if st.button("🔄 Atualizar Página"):
+            st.rerun()
+
     encomendas_ref = db.collection("encomendas").stream()
     
     for doc in encomendas_ref:
@@ -112,14 +121,16 @@ with aba_visualizar:
         # O '.get()' evita erros em pedidos antigos
         nome_cli = pedido.get('cliente', 'Sem Nome')
         data_ent = pedido.get('data_entrega', '')
+        horario_ent = pedido.get('horario_retirada', 'Não informado')
         tamanho_bolo = pedido.get('tamanho', pedido.get('peso', 'Não informado'))
         endereco_entrega = pedido.get('endereco', 'Não informado')
         
-        with st.expander(f"📦 Pedido: {nome_cli} - Para: {data_ent} ({pedido.get('status', 'Pendente')})"):
+        with st.expander(f"📦 Pedido: {nome_cli} - Para: {data_ent} às {horario_ent} ({pedido.get('status', 'Pendente')})"):
             st.markdown(f"""
             - **Telefone:** {pedido.get('telefone', 'Não informado')}
             - **Local de Retirada/Entrega:** <span style='color:#9b1a1a; font-weight:bold;'>{pedido.get('local_retirada', 'Não informado')}</span>
             - **Endereço:** {endereco_entrega}
+            - **Data e Horário:** {data_ent} às {horario_ent}
             - **Sabor:** {pedido.get('sabor', 'Não informado')}
             - **Tamanho/Peso:** {tamanho_bolo}
             - **Observações:** {pedido.get('observacoes', 'Nenhuma observação')}
