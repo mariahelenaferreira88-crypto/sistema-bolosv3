@@ -214,4 +214,41 @@ with aba_visualizar:
                 <p style='margin: 5px 0 15px 0; color: #555;'><strong>🏠 Endereço:</strong> {p.get('endereco', 'Não preenchido')}</p>
                 
                 <div style='background-color: #fff; padding: 12px; border: 1px dashed #ccc; border-radius: 6px;'>
-                    <p style='margin: 0; font
+                    <p style='margin: 0; font-size: 15px;'><strong>🍰 Bolo:</strong> {p.get('sabor', '')}</p>
+                    <p style='margin: 5px 0 0 0; font-size: 15px;'><strong>⚖️ Peso/Tamanho:</strong> {p.get('tamanho', '')}</p>
+                </div>
+                
+                <p style='margin-top: 15px; color: #444;'><strong>📝 Obs:</strong> <i>{p.get('observacoes', 'Nenhuma observação registada.')}</i></p>
+            </div>
+            <br>
+            """, unsafe_allow_html=True)
+            
+            # Botões de Ação Redesenhados
+            ca, cb, cc = st.columns(3)
+            with ca:
+                if status_atual == "Pendente":
+                    if st.button("✅ Concluir/Entregue", key=f"ent_{p['id']}", use_container_width=True):
+                        db.collection("encomendas").document(p['id']).update({"status": "Entregue"})
+                        st.rerun()
+                else:
+                    if st.button("↩️ Reabrir Pedido", key=f"reab_{p['id']}", use_container_width=True):
+                        db.collection("encomendas").document(p['id']).update({"status": "Pendente"})
+                        st.rerun()
+            with cb:
+                if st.button("🗑️ Apagar Permanente", key=f"del_{p['id']}", use_container_width=True):
+                    db.collection("encomendas").document(p['id']).delete()
+                    st.rerun()
+            with cc:
+                # Botão de impressão com hover dourado
+                components.html(f"""
+                    <style>
+                        .btn-print {{
+                            background-color: #ddaf25; border: none; color: white; padding: 9px 15px; 
+                            font-weight: 600; border-radius: 8px; cursor: pointer; width: 100%;
+                            font-family: sans-serif; transition: background 0.3s;
+                        }}
+                        .btn-print:hover {{ background-color: #c79b1d; }}
+                    </style>
+                    <script> function imprimir() {{ window.parent.print(); }} </script>
+                    <button class="btn-print" onclick="imprimir()">🖨️ Imprimir Pedido</button>
+                """, height=50)
