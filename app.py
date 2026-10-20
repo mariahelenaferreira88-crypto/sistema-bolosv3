@@ -4,46 +4,95 @@ from firebase_admin import credentials, firestore
 import streamlit.components.v1 as components
 
 # 1. Configuração da Página
-st.set_page_config(page_title="Doceria da Vovó - Encomendas", layout="wide")
+st.set_page_config(page_title="Doceria da Vovó - Encomendas", page_icon="🍰", layout="wide")
 
-# CUSTOMIZAÇÃO DE CORES (#9b1a1a principal e #ddaf25 detalhes)
+# 2. CUSTOMIZAÇÃO AVANÇADA DE UI/UX (CSS)
 st.markdown("""
     <style>
-    /* Cor dos Títulos e Textos principais */
+    /* Fundo geral ligeiramente acinzentado para dar destaque aos cartões brancos */
+    .stApp {
+        background-color: #fdfdfd;
+    }
+    
+    /* Títulos com a cor oficial da marca e fonte elegante */
     h1, h2, h3 {
         color: #9b1a1a !important;
+        font-family: 'Georgia', serif;
     }
     
-    /* Cor dos Botões Principais */
-    div.stButton > button {
+    /* Design sofisticado para o Formulário */
+    div[data-testid="stForm"] {
+        background-color: #ffffff;
+        border: 1px solid #f0f0f0;
+        border-radius: 12px;
+        padding: 30px;
+        box-shadow: 0px 8px 20px rgba(0,0,0,0.04);
+    }
+    
+    /* Botões Primários (Formulário) */
+    div.stButton > button[kind="primary"] {
         background-color: #9b1a1a;
         color: white;
-        border: 2px solid #9b1a1a;
+        border: none;
         border-radius: 8px;
+        padding: 10px 24px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        transition: all 0.3s ease;
     }
-    
-    /* Cor dos Botões ao passar o rato (Hover) */
-    div.stButton > button:hover {
+    div.stButton > button[kind="primary"]:hover {
         background-color: #ddaf25;
-        border: 2px solid #ddaf25;
+        box-shadow: 0px 4px 12px rgba(221, 175, 37, 0.4);
+        transform: translateY(-2px);
+    }
+
+    /* Botões Secundários (Ações normais) */
+    div.stButton > button[kind="secondary"] {
+        background-color: transparent;
+        color: #9b1a1a;
+        border: 1px solid #9b1a1a;
+        border-radius: 8px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    div.stButton > button[kind="secondary"]:hover {
+        background-color: #9b1a1a;
         color: white;
     }
 
-    /* Cor de Links e textos de destaque */
-    a, .st-emotion-cache-1kyxreq {
-        color: #ddaf25 !important;
+    /* Campos de Input mais elegantes */
+    .stTextInput input, .stSelectbox select, .stTextArea textarea, .stDateInput input, .stTimeInput input {
+        border-radius: 6px !important;
+        border: 1px solid #e0e0e0 !important;
     }
-    
-    /* Cor da caixa dos pedidos */
+    .stTextInput input:focus, .stSelectbox select:focus, .stTextArea textarea:focus, .stDateInput input:focus, .stTimeInput input:focus {
+        border-color: #ddaf25 !important;
+        box-shadow: 0 0 0 1.5px #ddaf25 !important;
+    }
+
+    /* Design das Caixas de Encomenda (Expanders) */
+    div[data-testid="stExpander"] {
+        background-color: #ffffff;
+        border-radius: 10px;
+        border: 1px solid #eaeaea;
+        box-shadow: 0px 2px 8px rgba(0,0,0,0.03);
+        margin-bottom: 12px;
+    }
     .streamlit-expanderHeader {
         color: #9b1a1a !important;
+        font-size: 16px !important;
         font-weight: bold !important;
-        font-size: 18px !important;
+    }
+    
+    /* Divisórias suaves */
+    hr {
+        margin: 1.5em 0;
+        border-top: 1px solid #f0f0f0;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# 2. Conexão com o Firebase
+# 3. Conexão com o Firebase
 if not firebase_admin._apps:
     key_dict = dict(st.secrets["firebase"])
     key_dict["private_key"] = key_dict["private_key"].replace("\\n", "\n")
@@ -52,110 +101,117 @@ if not firebase_admin._apps:
 
 db = firestore.client()
 
-# Cabeçalho com Logomarca
-col_logo, col_titulo = st.columns([1, 4])
+# 4. Cabeçalho Sofisticado
+col_logo, col_titulo = st.columns([1, 5])
 with col_logo:
     try:
-        st.image("logo.jpg", width=150)
+        st.image("logo.jpg", width=120)
     except:
-        st.write("*(Logo em falta)*")
+        st.write("*(Logo)*")
 with col_titulo:
     st.title("Sistema de Encomendas")
-    st.markdown("<p style='color:#ddaf25; font-size:20px; font-weight:bold;'>🍰 Gestão Oficial da Doceria</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color:#ddaf25; font-size:18px; font-weight:600; margin-top:-15px;'>Doceria da Vovó ✨</p>", unsafe_allow_html=True)
 
-# 3. Criar Abas para o Sistema
-aba_lancar, aba_visualizar = st.tabs(["📝 Lançar Nova Encomenda", "📋 Ver Encomendas"])
+st.markdown("---")
 
+# 5. Abas Principais
+aba_lancar, aba_visualizar = st.tabs(["📝 Lançar Novo Pedido", "📋 Painel de Controle"])
+
+# ================= ABA 1: LANÇAR PEDIDO =================
 with aba_lancar:
-    st.subheader("Nova Encomenda")
     with st.form("form_encomenda"):
-        col1, col2 = st.columns(2)
-        with col1:
-            cliente = st.text_input("Nome do Cliente *")
-            telefone = st.text_input("Telefone do Cliente")
-            data_entrega = st.date_input("Data de Entrega *")
-            horario_retirada = st.time_input("Horário de Retirada/Entrega")
-        with col2:
-            local_retirada = st.selectbox("Local de Retirada / Entrega", ["Loja cofesa", "Loja centro", "Casa"])
-            sabor = st.text_input("Sabor do Bolo (Digite o sabor e detalhes) *")
-            tamanho = st.text_input("Tamanho/Peso (Ex: 2kg, 20 fatias, Grande) *")
         
-        # Novos campos de endereço e observações
-        endereco = st.text_input("Endereço para Entrega (Preencha caso a opção seja 'Casa')")
-        observacoes = st.text_area("Observações (Opcional - Ex: Alergias, detalhes na decoração, mensagem, etc.)")
+        # Grupo 1: Cliente
+        st.markdown("<h4 style='color:#9b1a1a;'>👤 Dados do Cliente</h4>", unsafe_allow_html=True)
+        c1, c2 = st.columns(2)
+        with c1: cliente = st.text_input("Nome Completo *", placeholder="Ex: Maria Joaquina")
+        with c2: telefone = st.text_input("WhatsApp / Telefone", placeholder="(00) 00000-0000")
         
-        submit = st.form_submit_button("Salvar Pedido")
+        st.markdown("<hr style='margin: 10px 0;'>", unsafe_allow_html=True)
+        
+        # Grupo 2: O Bolo
+        st.markdown("<h4 style='color:#9b1a1a;'>🎂 Detalhes do Bolo</h4>", unsafe_allow_html=True)
+        c3, c4 = st.columns([2, 1])
+        with c3: sabor = st.text_input("Sabor e Recheio *", placeholder="Ex: Massa branca, recheio de ninho com morangos")
+        with c4: tamanho = st.text_input("Tamanho/Peso *", placeholder="Ex: 2kg ou 20 fatias")
+        observacoes = st.text_area("Observações Especiais", placeholder="Mensagens para o topo, restrições alimentares, cor da decoração, etc.")
+
+        st.markdown("<hr style='margin: 10px 0;'>", unsafe_allow_html=True)
+        
+        # Grupo 3: Entrega
+        st.markdown("<h4 style='color:#9b1a1a;'>🚚 Logística de Entrega</h4>", unsafe_allow_html=True)
+        c5, c6, c7 = st.columns(3)
+        with c5: data_entrega = st.date_input("Data do Evento *")
+        with c6: horario_retirada = st.time_input("Horário Combinado")
+        with c7: local_retirada = st.selectbox("Local de Saída", ["Loja cofesa", "Loja centro", "Casa"])
+        endereco = st.text_input("Endereço Completo (Obrigatório caso a opção seja entrega em 'Casa')")
+        
+        st.write("") # Espaço
+        submit = st.form_submit_button("Criar Encomenda Oficial", type="primary", use_container_width=True)
 
         if submit and cliente and sabor and tamanho:
             doc_ref = db.collection("encomendas").document()
             doc_ref.set({
-                "cliente": cliente,
-                "telefone": telefone,
-                "sabor": sabor,
-                "tamanho": tamanho,
-                "local_retirada": local_retirada,
-                "endereco": endereco,
-                "data_entrega": str(data_entrega),
-                "horario_retirada": str(horario_retirada),
-                "observacoes": observacoes,
-                "status": "Pendente"
+                "cliente": cliente, "telefone": telefone, "sabor": sabor, "tamanho": tamanho,
+                "local_retirada": local_retirada, "endereco": endereco, 
+                "data_entrega": str(data_entrega), "horario_retirada": str(horario_retirada),
+                "observacoes": observacoes, "status": "Pendente"
             })
-            st.success(f"✅ Encomenda de {cliente} lançada com sucesso!")
+            st.success(f"🎉 Fantástico! A encomenda de {cliente} foi registada e sincronizada.")
         elif submit:
-            st.warning("Por favor, preencha o Nome, Sabor e Tamanho do bolo.")
+            st.error("⚠️ Atenção: Os campos Nome, Sabor e Tamanho são obrigatórios.")
 
+
+# ================= ABA 2: PAINEL DE CONTROLE =================
 with aba_visualizar:
-    col_titulo_vis, col_btn_atualizar = st.columns([3, 1])
-    with col_titulo_vis:
-        st.subheader("Encomendas Registradas (Sincronizado)")
-    with col_btn_atualizar:
-        # Botão dedicado para recarregar a página e puxar novos pedidos
-        if st.button("🔄 Atualizar Página"):
-            st.rerun()
-
-    encomendas_ref = db.collection("encomendas").stream()
+    # Ler dados primeiro para criar o Dashboard
+    docs = db.collection("encomendas").stream()
+    pedidos = []
+    for d in docs:
+        p = d.to_dict()
+        p['id'] = d.id
+        pedidos.append(p)
     
-    for doc in encomendas_ref:
-        pedido = doc.to_dict()
-        
-        # O '.get()' evita erros em pedidos antigos
-        nome_cli = pedido.get('cliente', 'Sem Nome')
-        data_ent = pedido.get('data_entrega', '')
-        horario_ent = pedido.get('horario_retirada', 'Não informado')
-        tamanho_bolo = pedido.get('tamanho', pedido.get('peso', 'Não informado'))
-        endereco_entrega = pedido.get('endereco', 'Não informado')
-        
-        with st.expander(f"📦 Pedido: {nome_cli} - Para: {data_ent} às {horario_ent} ({pedido.get('status', 'Pendente')})"):
-            st.markdown(f"""
-            - **Telefone:** {pedido.get('telefone', 'Não informado')}
-            - **Local de Retirada/Entrega:** <span style='color:#9b1a1a; font-weight:bold;'>{pedido.get('local_retirada', 'Não informado')}</span>
-            - **Endereço:** {endereco_entrega}
-            - **Data e Horário:** {data_ent} às {horario_ent}
-            - **Sabor:** {pedido.get('sabor', 'Não informado')}
-            - **Tamanho/Peso:** {tamanho_bolo}
-            - **Observações:** {pedido.get('observacoes', 'Nenhuma observação')}
-            - **Status:** {pedido.get('status', 'Pendente')}
-            """, unsafe_allow_html=True)
+    pendentes = sum(1 for p in pedidos if p.get('status') == 'Pendente')
+    entregues = sum(1 for p in pedidos if p.get('status') == 'Entregue')
+    
+    # Linha de Dashboard e Botão de Atualizar
+    dash1, dash2, dash3, dash4 = st.columns(4)
+    dash1.metric("📦 Total de Pedidos", len(pedidos))
+    dash2.metric("⏳ Pendentes", pendentes)
+    dash3.metric("✅ Entregues", entregues)
+    with dash4:
+        st.write("") # Alinhar verticalmente
+        if st.button("🔄 Puxar Novos Pedidos", use_container_width=True):
+            st.rerun()
             
-            # Botões de Ação
-            col_a, col_b, col_c = st.columns(3)
-            with col_a:
-                if st.button("✅ Marcar Entregue", key=f"ent_{doc.id}"):
-                    db.collection("encomendas").document(doc.id).update({"status": "Entregue"})
-                    st.rerun()
-            with col_b:
-                if st.button("🗑️ Apagar Pedido", key=f"apagar_{doc.id}"):
-                    db.collection("encomendas").document(doc.id).delete()
-                    st.rerun()
-            with col_c:
-                # Botão de impressão
-                components.html(f"""
-                    <script>
-                        function imprimir() {{
-                            window.parent.print();
-                        }}
-                    </script>
-                    <button onclick="imprimir()" style="background-color: #ddaf25; border: none; color: white; padding: 8px 15px; font-weight: bold; border-radius: 8px; cursor: pointer; width: 100%;">
-                        🖨️ Imprimir Página
-                    </button>
-                """, height=50)
+    st.markdown("<hr style='margin: 10px 0 20px 0;'>", unsafe_allow_html=True)
+
+    # Listar os pedidos com design de Recibo
+    if len(pedidos) == 0:
+        st.info("Nenhuma encomenda registada no sistema até ao momento.")
+        
+    for p in pedidos:
+        status_atual = p.get('status', 'Pendente')
+        
+        # Etiqueta visual de status
+        cor_badge = "#d4edda" if status_atual == "Entregue" else "#fff3cd"
+        cor_texto = "#155724" if status_atual == "Entregue" else "#856404"
+        badge_html = f"<span style='background-color:{cor_badge}; color:{cor_texto}; padding:4px 12px; border-radius:12px; font-size:12px; font-weight:bold;'>{status_atual}</span>"
+        
+        titulo_card = f"📅 {p.get('data_entrega')} às {p.get('horario_retirada', '--:--')} | {p.get('cliente', 'Sem nome')}"
+        
+        with st.expander(f"{titulo_card} ({status_atual})"):
+            
+            # Layout interno estilo "Recibo" com a linha lateral dourada (#ddaf25)
+            st.markdown(f"""
+            <div style='background-color: #fafafa; padding: 15px; border-radius: 8px; border-left: 5px solid #ddaf25;'>
+                <div style='display: flex; justify-content: space-between; margin-bottom: 10px;'>
+                    <span style='font-size: 16px; font-weight: bold; color: #9b1a1a;'>{p.get('cliente', 'Cliente')}</span>
+                    {badge_html}
+                </div>
+                <p style='margin: 0; color: #555;'><strong>📞 Fone:</strong> {p.get('telefone', 'Não informado')} | <strong>📍 Local:</strong> {p.get('local_retirada', '')}</p>
+                <p style='margin: 5px 0 15px 0; color: #555;'><strong>🏠 Endereço:</strong> {p.get('endereco', 'Não preenchido')}</p>
+                
+                <div style='background-color: #fff; padding: 12px; border: 1px dashed #ccc; border-radius: 6px;'>
+                    <p style='margin: 0; font
