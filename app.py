@@ -144,4 +144,7 @@ with aba_visualizar:
                             window.parent.print();
                         }}
                     </script>
-                    <button onclick="imprimir()" style
+                    <button onclick="imprimir()" style="background-color: #ddaf25; border: none; color: white; padding: 8px 15px; font-weight: bold; border-radius: 8px; cursor: pointer; width: 100%;">
+                        🖨️ Imprimir Página
+                    </button>
+                """, height=50)
