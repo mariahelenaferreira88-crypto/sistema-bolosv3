@@ -2,7 +2,7 @@ import streamlit as st
 import firebase_admin
 from firebase_admin import credentials, firestore
 import streamlit.components.v1 as components
-import json  # <--- NOVA BIBLIOTECA ADICIONADA AQUI
+import json
 
 # 1. Configuração da Página
 st.set_page_config(page_title="Doceria da Vovó - Encomendas", page_icon="🍰", layout="wide")
@@ -45,11 +45,11 @@ st.markdown("""
         background: linear-gradient(135deg, #9b1a1a 0%, #7a1414 100%);
         color: #ffffff; 
         border: none; 
-        border-radius: 30px; 
+        border-radius: 30px; /* Bordas bem arredondadas */
         padding: 12px 30px; 
         font-family: 'Montserrat', sans-serif !important;
         font-weight: 600; 
-        text-transform: uppercase; 
+        text-transform: uppercase; /* Letras maiúsculas */
         letter-spacing: 1.5px;
         transition: all 0.4s ease; 
         box-shadow: 0px 6px 15px rgba(155, 26, 26, 0.25);
@@ -147,7 +147,8 @@ with aba_lancar:
         
         st.markdown("<h3 style='color:#9b1a1a;'>🚚 Logística de Entrega</h3>", unsafe_allow_html=True)
         c5, c6, c7 = st.columns(3)
-        with c5: data_entrega = st.date_input("Data do Evento *")
+        # Formato de calendário ajustado para o Brasil (DD/MM/YYYY)
+        with c5: data_entrega = st.date_input("Data do Evento *", format="DD/MM/YYYY")
         with c6: horario_retirada = st.time_input("Horário Combinado")
         with c7: local_retirada = st.selectbox("Local de Saída", ["Loja cofesa", "Loja centro", "Casa"])
         endereco = st.text_input("Endereço Completo (Obrigatório caso a opção seja entrega em 'Casa')")
@@ -157,7 +158,11 @@ with aba_lancar:
 
         if submit and cliente and sabor and tamanho:
             doc_ref = db.collection("encomendas").document()
-            doc_ref.set({"cliente": cliente, "telefone": telefone, "sabor": sabor, "tamanho": tamanho, "local_retirada": local_retirada, "endereco": endereco, "data_entrega": str(data_entrega), "horario_retirada": str(horario_retirada), "observacoes": observacoes, "status": "Pendente"})
+            
+            # Formatar a data escolhida para string no formato brasileiro (Dia/Mês/Ano)
+            data_formatada_br = data_entrega.strftime("%d/%m/%Y")
+            
+            doc_ref.set({"cliente": cliente, "telefone": telefone, "sabor": sabor, "tamanho": tamanho, "local_retirada": local_retirada, "endereco": endereco, "data_entrega": data_formatada_br, "horario_retirada": str(horario_retirada)[:5], "observacoes": observacoes, "status": "Pendente"})
             st.success(f"🎉 Fantástico! A encomenda de {cliente} foi registada e sincronizada.")
         elif submit:
             st.error("⚠️ Atenção: Os campos Nome, Sabor e Tamanho são obrigatórios.")
@@ -189,6 +194,8 @@ with aba_visualizar:
         cor_badge = "#d4edda" if status_atual == "Entregue" else "#fcf2c5"
         cor_texto = "#155724" if status_atual == "Entregue" else "#856404"
         badge_html = f"<span style='background-color:{cor_badge}; color:{cor_texto}; padding:5px 15px; border-radius:20px; font-size:12px; font-family: \"Montserrat\", sans-serif; font-weight:600; letter-spacing: 0.5px;'>{status_atual.upper()}</span>"
+        
+        # A data agora já vem formatada do banco (DD/MM/YYYY)
         titulo_card = f"📅 {p.get('data_entrega')} às {p.get('horario_retirada', '--:--')} | {p.get('cliente', 'Sem nome')}"
         
         with st.expander(f"{titulo_card}"):
@@ -222,7 +229,6 @@ with aba_visualizar:
                     db.collection("encomendas").document(p['id']).delete()
                     st.rerun()
             with cc:
-                # ====== INÍCIO DA MUDANÇA PARA IMPRESSORA TÉRMICA ======
                 # Prepara o HTML estreito que vai direto para a impressora térmica
                 html_cupom = f"""
                 <html>
@@ -256,7 +262,6 @@ with aba_visualizar:
                 </html>
                 """
                 
-                # Prepara o código com segurança para o Javascript ler
                 html_cupom_js = json.dumps(html_cupom)
                 
                 components.html(f"""
@@ -264,12 +269,10 @@ with aba_visualizar:
                     <script> 
                     function imprimir_cupom() {{ 
                         var conteudo = {html_cupom_js};
-                        // Abre uma mini janela invisível só com os dados do cupão
                         var janela = window.open('', '', 'width=300,height=600');
                         janela.document.write(conteudo);
                         janela.document.close();
                         janela.focus();
-                        // Espera meio segundo para a janela carregar e manda imprimir
                         setTimeout(function() {{
                             janela.print();
                             janela.close();
