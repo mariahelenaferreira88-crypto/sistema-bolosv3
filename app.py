@@ -2,6 +2,7 @@ import streamlit as st
 import firebase_admin
 from firebase_admin import credentials, firestore
 import streamlit.components.v1 as components
+import json  # <--- NOVA BIBLIOTECA ADICIONADA AQUI
 
 # 1. Configuração da Página
 st.set_page_config(page_title="Doceria da Vovó - Encomendas", page_icon="🍰", layout="wide")
@@ -44,11 +45,11 @@ st.markdown("""
         background: linear-gradient(135deg, #9b1a1a 0%, #7a1414 100%);
         color: #ffffff; 
         border: none; 
-        border-radius: 30px; /* Bordas bem arredondadas */
+        border-radius: 30px; 
         padding: 12px 30px; 
         font-family: 'Montserrat', sans-serif !important;
         font-weight: 600; 
-        text-transform: uppercase; /* Letras maiúsculas */
+        text-transform: uppercase; 
         letter-spacing: 1.5px;
         transition: all 0.4s ease; 
         box-shadow: 0px 6px 15px rgba(155, 26, 26, 0.25);
@@ -221,8 +222,59 @@ with aba_visualizar:
                     db.collection("encomendas").document(p['id']).delete()
                     st.rerun()
             with cc:
+                # ====== INÍCIO DA MUDANÇA PARA IMPRESSORA TÉRMICA ======
+                # Prepara o HTML estreito que vai direto para a impressora térmica
+                html_cupom = f"""
+                <html>
+                <head>
+                    <style>
+                        @page {{ margin: 0; }}
+                        body {{ font-family: 'Courier New', Courier, monospace; font-size: 13px; margin: 0; padding: 10px; width: 58mm; color: #000; }}
+                        h2 {{ text-align: center; font-size: 16px; margin: 5px 0; }}
+                        .divisoria {{ border-top: 1px dashed #000; margin: 8px 0; }}
+                        p {{ margin: 4px 0; line-height: 1.3; word-wrap: break-word; }}
+                    </style>
+                </head>
+                <body>
+                    <h2>DOCERIA DA VOVO</h2>
+                    <div class='divisoria'></div>
+                    <p><b>CLIENTE:</b><br>{p.get('cliente', '')}</p>
+                    <p><b>FONE:</b> {p.get('telefone', '')}</p>
+                    <p><b>DATA:</b> {p.get('data_entrega', '')}</p>
+                    <p><b>HORA:</b> {p.get('horario_retirada', '--:--')}</p>
+                    <p><b>LOCAL:</b> {p.get('local_retirada', '')}</p>
+                    <p><b>ENDERECO:</b><br>{p.get('endereco', '')}</p>
+                    <div class='divisoria'></div>
+                    <p><b>BOLO:</b><br>{p.get('sabor', '')}</p>
+                    <p><b>TAMANHO:</b> {p.get('tamanho', '')}</p>
+                    <div class='divisoria'></div>
+                    <p><b>OBSERVACOES:</b><br>{p.get('observacoes', 'Nenhuma')}</p>
+                    <div class='divisoria'></div>
+                    <p style='text-align:center; font-size:11px;'>Obrigado pela preferencia!</p>
+                    <br><br><br>
+                </body>
+                </html>
+                """
+                
+                # Prepara o código com segurança para o Javascript ler
+                html_cupom_js = json.dumps(html_cupom)
+                
                 components.html(f"""
                     <style>.btn-print {{background-color: #ddaf25; border: none; color: white; padding: 10px 15px; font-weight: 600; border-radius: 20px; cursor: pointer; width: 100%; font-family: 'Montserrat', sans-serif; transition: all 0.3s ease; box-shadow: 0 4px 10px rgba(221,175,37,0.3);}} .btn-print:hover {{ background-color: #c79b1d; transform: translateY(-2px); }}</style>
-                    <script> function imprimir() {{ window.parent.print(); }} </script>
-                    <button class="btn-print" onclick="imprimir()">🖨️ Imprimir Pedido</button>
+                    <script> 
+                    function imprimir_cupom() {{ 
+                        var conteudo = {html_cupom_js};
+                        // Abre uma mini janela invisível só com os dados do cupão
+                        var janela = window.open('', '', 'width=300,height=600');
+                        janela.document.write(conteudo);
+                        janela.document.close();
+                        janela.focus();
+                        // Espera meio segundo para a janela carregar e manda imprimir
+                        setTimeout(function() {{
+                            janela.print();
+                            janela.close();
+                        }}, 500);
+                    }} 
+                    </script>
+                    <button class="btn-print" onclick="imprimir_cupom()">🖨️ Imprimir Pedido</button>
                 """, height=50)
